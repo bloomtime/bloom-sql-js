@@ -1,6 +1,6 @@
 {
   "name": "bloom-sql",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Chained functions for building SQL strings for node-postgres.",
   "main": "index.js",
   "scripts": {
