@@ -10,48 +10,60 @@ _No really_. __Overly simple__.
 
 # Like what?
 
-Connect to `pg` as normal:
-
 ```
-var pg = require('pg');
-
-var db = new pg.Client('YOUR_DB_URL');
-db.connect();
+var SQL = require('bloom-sql'),
+    INSERT = SQL.INSERT,
+    SELECT = SQL.SELECT,
+    UPDATE = SQL.UPDATE,
+    DELETE = SQL.DELETE;
 ```
 
 Selecting stuff:
 
 ```
 > SELECT().FROM('foo').WHERE({ a: [1,2,3], b: 4 });
-{
-  text: 'SELECT * FROM foo WHERE a IN ($1, $2, $3) AND b = $4',
-  values: [1,2,3,4]
-}
+{ text: 'SELECT * FROM foo WHERE a IN ($1, $2, $3) AND b = $4',
+  values: [ 1, 2, 3, 4 ] }
 ```
 
-Delete stuff:
+Deleting stuff:
 
 ```
-var query = DELETE('foo').WHERE({ a: 1, b: 2 });
+> DELETE('foo').WHERE({ a: 1, b: 2 });
+{ text: 'DELETE FROM foo WHERE a = $1 AND b = $2',
+  values: [ 1, 2 ] }
 ```
 
-Delete stuff:
+Inserting stuff:
 
 ```
-var query = DELETE('foo').WHERE({ a: 1, b: 2 });
+> INSERT('foo').VALUES({ a: null, b: null, c: null });
+{ text: 'INSERT INTO foo(a, b, c) VALUES($1, $2, $3)',
+  values: [ null, null, null ] }
 ```
 
-Delete stuff:
+Updating stuff:
 
 ```
-var query = DELETE('foo').WHERE({ a: 1, b: 2 });
+> UPDATE('foo').SET({ a: 1, b: 2, c: 3 }).WHERE({ d: 4, e: 5 }).RETURNING('*');
+{ text: 'UPDATE foo SET a = $1, b = $2, c = $3 WHERE d = $4 AND e = $5 RETURNING *',
+  values: [ 1, 2, 3, 4, 5 ] }
 ```
 
-Pass the resulting query object to the db:
+__This code does not talk to the database.__ Connect to `pg` as normal as pass one of the resulting query objects to the db to run it:
 
 ```
+var pg = require('pg'),
+    SELECT = require('bloom-sql').SELECT;
+
+var db = new pg.Client('YOUR_DB_URL');
+db.connect();
+
+var query = SELECT('*').FROM('users').WHERE({id:1}).LIMIT(1);
 db.query(query, function(err,results){
-  // check err and do stuff with results.rows
+  // ensure !err
+  // check results.rowCount === 1 
+  // do stuff with results.rows[0]
 });
 ```
 
