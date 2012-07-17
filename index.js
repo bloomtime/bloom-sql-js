@@ -124,13 +124,9 @@ function INSERT(table) {
 
 INSERT.prototype = {
     VALUES: function(object) {
-        var values = this.values,
-            columns = Object.keys(object),
-            placeholders = columns.map(function(c,i) {
-                values.push(object[c]);
-                return '$' + values.length;
-            });
-        this.text += '('+columns.join(', ')+') VALUES(' + placeholders.join(', ') + ')';
+        var columns = Object.keys(object),
+            insert_values = get_insert_values(object, columns, this.values);
+        this.text += '('+columns.join(', ')+') VALUES(' + insert_values + ')';
         return this;
     },
     RETURNING: function(returning) {
@@ -169,10 +165,18 @@ DELETE.prototype = {
     }
 };
 
-function get_set_placeholder(value, values) {
+function get_insert_values(object, columns, values) {
+    return columns.map(function(c,i) {
+        return get_placeholder(object[c], values);
+    }).join(', ');
+}
+
+
+// used in get_set_clause and get_insert_values...
+function get_placeholder(value, values) {
     if (Array.isArray(value)) {
         return 'ARRAY[' + value.map(function(item){
-            return get_set_placeholder(item, values);
+            return get_placeholder(item, values);
         }).join(', ') + ']'
     } else {
         values.push(value);
@@ -183,7 +187,7 @@ function get_set_placeholder(value, values) {
 // only used in UPDATE, but here for clarity/efficiency
 function get_set_clause(set, values) {
     return Object.keys(set).map(function(c,i){
-        return c + ' = ' + get_set_placeholder(set[c], values);
+        return c + ' = ' + get_placeholder(set[c], values);
     }).join(', ');
 }
 
