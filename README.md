@@ -2,7 +2,7 @@
 
 I am an __overly simple__ library to make it a bit easier to build simple SQL statements for [node-postgres](https://github.com/brianc/node-postgres/) (affectionaly known as `pg`). I generate the `{ text: '...', values: [] }` objects that you typically pass to `client.query(...)`.
 
-It gets tedious matching up `$1, $2` etc. and building the right kind of values array. My functions help you do this and get the place-holder numbers right, even for `UPDATE/SET/WHERE` and for `WHERE IN` clauses which require a flattened array of arguments.
+It gets tedious matching up `$1, $2` etc. and building the right kind of values array. My functions help you do this and get the place-holder numbers right, even for `UPDATE/SET/WHERE` and for `WHERE IN` clauses and Postgres `ARRAY[]` values which require a flattened array of arguments.
 
 I have some tests written in Mocha. Of course I could use more!
 
@@ -73,6 +73,9 @@ db.query(query, function(err,results){
  * comparisons in where clauses `(a > 1 AND b < 2)`
  * any hint of `JOIN`, sub-select, etc.
  * the other 90% of SQL?
+ * it would be nice to support Postgres `ARRAY` operators in `WHERE` clauses, but this probably requires a different way of doing `IN` queries. Right now:
+   * in `UPDATE` and `INSERT`, a JS Array `[1,2,3]` will be converted into a Postgres `ARRAY[$1,$2,$3]` and the values flattened appropriately for the prepared statement
+   * in `WHERE` clauses, a JS Array `[1,2,3]` will be converted into a SQL `IN ($1,$2,$3)` and  the values flattened appropriately for the prepared statement
 
 # Installation
 
