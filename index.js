@@ -29,14 +29,7 @@ function UPDATE(table) {
 
 UPDATE.prototype = {
     SET: function(set) {
-        // build set clause:
-        var set_columns = Object.keys(set),
-            set_clause = set_columns.map(function(c,i) {
-                return c + ' = $' + (i+1);
-            }),
-            set_values = set_columns.map(function(c){ return set[c]; });
-        this.text += ' SET ' + set_clause.join(', ');
-        this.values.push.apply(this.values, set_values);
+        this.text += ' SET ' + get_set_clause(set, this.values);
         return this;
     },
     WHERE: function(where,conjunction) {
@@ -176,16 +169,34 @@ DELETE.prototype = {
     }
 };
 
+function get_set_placeholder(value, values) {
+    if (Array.isArray(value)) {
+        return 'ARRAY[' + value.map(function(item){
+            return get_set_placeholder(item, values);
+        }).join(', ') + ']'
+    } else {
+        values.push(value);
+        return '$' + values.length;
+    }
+}
+
+// only used in UPDATE, but here for clarity/efficiency
+function get_set_clause(set, values) {
+    return Object.keys(set).map(function(c,i){
+        return c + ' = ' + get_set_placeholder(set[c], values);
+    }).join(', ');
+}
+
 // used in UPDATE, SELECT and DELETE
 // can handle where objects like so:
 // { foo: [1,2,3,4], bar: NOT_NULL, baz: null }
 function get_where_clause(where, values, conjunction){
-    return Object.keys(where).map(function(c,i) {
+    return Object.keys(where).map(function column_to_where(c,i) {
         var value = where[c];
         if (Array.isArray(value)) {
             return c + ' IN (' + value.map(function(v,i) {
                 values.push(v);
-                return '$'+values.length;
+                return '$' + values.length;
             }).join(', ') + ')';
         } else if (value === null) {
             return c + ' IS NULL';
