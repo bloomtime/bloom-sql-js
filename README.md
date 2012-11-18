@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/bloomtime/bloom-sql-js.png)](http://travis-ci.org/bloomtime/bloom-sql-js)
 # What are you?
 
 I am an __overly simple__ library to make it a bit easier to build simple SQL statements for [node-postgres](https://github.com/brianc/node-postgres/) (affectionaly known as `pg`). I generate the `{ text: '...', values: [] }` objects that you typically pass to `client.query(...)`.
