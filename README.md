@@ -1,4 +1,3 @@
-[![build status](https://secure.travis-ci.org/bloomtime/bloom-sql-js.png)](http://travis-ci.org/bloomtime/bloom-sql-js)
 # What are you?
 
 I am an __overly simple__ library to make it a bit easier to build simple SQL statements for [node-postgres](https://github.com/brianc/node-postgres/) (affectionaly known as `pg`). I generate the `{ text: '...', values: [] }` objects that you typically pass to `client.query(...)`.
@@ -7,7 +6,7 @@ It gets tedious matching up `$1, $2` etc. and building the right kind of values 
 
 I have some tests written in Mocha. Of course I could use more!
 
-_No really_. __Overly simple__. 
+_No really_. __Overly simple__. You probably want [node-sql](https://github.com/brianc/node-sql), which is under active development.
 
 # Like what?
 
