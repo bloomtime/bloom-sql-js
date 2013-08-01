@@ -34,12 +34,8 @@ UPDATE.prototype = {
     },
     WHERE: function(where,conjunction) {
         assert(this.text.indexOf('SET') >= 0);
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == 'AND' || conjunction == 'OR');
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     RETURNING: function(returning) {
         assert(this.text.indexOf('SET') >= 0);
@@ -79,14 +75,11 @@ SELECT.prototype = {
         this.text += ' FROM ' + table;
         return this;
     },
-    WHERE: function(where,conjunction) {
+    // where,conjunction
+    WHERE: function() {
         assert(this.text.indexOf('FROM') >= 0);
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == AND || conjunction == OR);
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     ORDER_BY: function(what,direction) {
         assert(this.text.indexOf('FROM') >= 0);
@@ -151,12 +144,8 @@ function DELETE(table) {
 
 DELETE.prototype = {
     WHERE: function(where,conjunction) {
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == AND || conjunction == OR);
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     LIMIT: function(count) {
         assert(this.text.indexOf('WHERE') >= 0);
@@ -190,6 +179,34 @@ function get_set_clause(set, values) {
         return c + ' = ' + get_placeholder(set[c], values);
     }).join(', ');
 }
+
+// (iano): Because the rest of these functions are some weird combination
+// of functional and destructive I have allowed myself to be completely
+// destructive here. [dealwithit]
+function generate_where_clause(args, values) {
+    var clause;
+    if (args[0] !== null && typeof args[0] == 'object') {
+        clause = where_clause_from_object(args[0], args[1], values);
+    } else if (typeof args[0] == 'string') {
+        clause = where_clause_from_string(args[0], args[1] || [], values);
+    }
+    return ' WHERE ' + clause
+};
+
+function where_clause_from_object(where, conjunction, values) {
+    if (conjunction === undefined) {
+        conjunction = 'AND';
+    }
+    assert(conjunction == AND || conjunction == OR);
+    return get_where_clause(where, values, conjunction);
+};
+
+function where_clause_from_string(str, new_values, values) {
+    return str.replace("?", function () {
+        values.push(new_values.shift());
+        return "$" + values.length;
+    });
+};
 
 // used in UPDATE, SELECT and DELETE
 // can handle where objects like so:
