@@ -198,20 +198,6 @@ function where_clause_from_object(where, conjunction, values) {
         conjunction = 'AND';
     }
     assert(conjunction == AND || conjunction == OR);
-    return get_where_clause(where, values, conjunction);
-};
-
-function where_clause_from_string(str, new_values, values) {
-    return str.replace("?", function () {
-        values.push(new_values.shift());
-        return "$" + values.length;
-    });
-};
-
-// used in UPDATE, SELECT and DELETE
-// can handle where objects like so:
-// { foo: [1,2,3,4], bar: NOT_NULL, baz: null }
-function get_where_clause(where, values, conjunction){
     return Object.keys(where).map(function column_to_where(c,i) {
         var value = where[c];
         if (Array.isArray(value)) {
@@ -228,6 +214,19 @@ function get_where_clause(where, values, conjunction){
             return c + ' = $' + values.length;
         }
     }).join(' ' + conjunction + ' ');
+};
+
+function where_clause_from_string(str, new_values, values) {
+    return str.replace("?", function () {
+        values.push(new_values.shift());
+        return "$" + values.length;
+    });
+};
+
+// used in UPDATE, SELECT and DELETE
+// can handle where objects like so:
+// { foo: [1,2,3,4], bar: NOT_NULL, baz: null }
+function get_where_clause(where, values, conjunction){
 }
 
 module.exports = {
