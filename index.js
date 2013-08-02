@@ -217,9 +217,22 @@ function where_clause_from_object(where, conjunction, values) {
 };
 
 function where_clause_from_string(str, new_values, values) {
-    return str.replace("?", function () {
-        values.push(new_values.shift());
-        return "$" + values.length;
+    return str.replace(/\?/g, function () {
+        var value = new_values.shift();
+
+        if (Array.isArray(value)) {
+            return '(' + value.map(function(v) {
+                values.push(v);
+                return '$' + values.length;
+            }).join(', ') + ')';
+        } else if (value === null) {
+            return 'NULL';
+        } else if (value === NOT_NULL) {
+            return 'NOT NULL';
+        } else {
+            values.push(value);
+            return '$' + values.length;
+        }
     });
 };
 
