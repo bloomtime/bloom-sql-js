@@ -134,6 +134,26 @@ describe('SELECT', function(){
       sql.values.should.have.length(0);
     });
   });
+  describe('#().FROM(table).WHERE("(id < ?) AND (bar = ?)", [3, 5]).ORDER_BY(col,ASC)', function(){
+    it('should return an object with placeholders and populated values', function(){
+      var sql = SELECT().FROM('foo').WHERE("(id < ?) AND (bar = ?)", [3, 5])
+      sql.should.have.text;
+      sql.should.have.values;
+      sql.text.should.equal('SELECT * FROM foo WHERE (id < $1) AND (bar = $2)')
+      sql.values.should.be.an.instanceOf(Array)
+      sql.values.should.eql([3, 5]);
+    });
+  });
+  describe('#().FROM(table).WHERE("id IN ?", [[3, 5, 6]]).ORDER_BY(col,ASC)', function(){
+    it('should return an object with placeholders and populated values', function(){
+      var sql = SELECT().FROM('foo').WHERE("id IN ?", [[3, 5]])
+      sql.should.have.text;
+      sql.should.have.values;
+      sql.text.should.equal('SELECT * FROM foo WHERE id IN ($1, $2)')
+      sql.values.should.be.an.instanceOf(Array)
+      sql.values.should.eql([3, 5]);
+    });
+  });
   describe('#().FROM(table).WHERE(where_null,OR).ORDER_BY(col,ASC).LIMIT(10).OFFSET(10)', function(){
     it('should return an object with placeholders and populated values', function(){
       var sql = SELECT().FROM('foo').WHERE({ a: NULL, b: NOT_NULL },OR).ORDER_BY('bar','ASC').LIMIT(10).OFFSET(10);

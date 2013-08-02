@@ -34,12 +34,8 @@ UPDATE.prototype = {
     },
     WHERE: function(where,conjunction) {
         assert(this.text.indexOf('SET') >= 0);
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == 'AND' || conjunction == 'OR');
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     RETURNING: function(returning) {
         assert(this.text.indexOf('SET') >= 0);
@@ -79,14 +75,11 @@ SELECT.prototype = {
         this.text += ' FROM ' + table;
         return this;
     },
-    WHERE: function(where,conjunction) {
+    // where,conjunction
+    WHERE: function() {
         assert(this.text.indexOf('FROM') >= 0);
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == AND || conjunction == OR);
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     ORDER_BY: function(what,direction) {
         assert(this.text.indexOf('FROM') >= 0);
@@ -151,12 +144,8 @@ function DELETE(table) {
 
 DELETE.prototype = {
     WHERE: function(where,conjunction) {
-        if (conjunction === undefined) {
-            conjunction = 'AND';
-        }
-        assert(conjunction == AND || conjunction == OR);
-        this.text += ' WHERE ' + get_where_clause(where, this.values, conjunction);
-        return this;
+        this.text += generate_where_clause(arguments, this.values);
+        return this
     },
     LIMIT: function(count) {
         assert(this.text.indexOf('WHERE') >= 0);
@@ -191,10 +180,24 @@ function get_set_clause(set, values) {
     }).join(', ');
 }
 
-// used in UPDATE, SELECT and DELETE
-// can handle where objects like so:
-// { foo: [1,2,3,4], bar: NOT_NULL, baz: null }
-function get_where_clause(where, values, conjunction){
+// (iano): Because the rest of these functions are some weird combination
+// of functional and destructive I have allowed myself to be completely
+// destructive here. [dealwithit]
+function generate_where_clause(args, values) {
+    var clause;
+    if (args[0] !== null && typeof args[0] == 'object') {
+        clause = where_clause_from_object(args[0], args[1], values);
+    } else if (typeof args[0] == 'string') {
+        clause = where_clause_from_string(args[0], args[1] || [], values);
+    }
+    return ' WHERE ' + clause
+};
+
+function where_clause_from_object(where, conjunction, values) {
+    if (conjunction === undefined) {
+        conjunction = 'AND';
+    }
+    assert(conjunction == AND || conjunction == OR);
     return Object.keys(where).map(function column_to_where(c,i) {
         var value = where[c];
         if (Array.isArray(value)) {
@@ -211,6 +214,32 @@ function get_where_clause(where, values, conjunction){
             return c + ' = $' + values.length;
         }
     }).join(' ' + conjunction + ' ');
+};
+
+function where_clause_from_string(str, new_values, values) {
+    return str.replace(/\?/g, function () {
+        var value = new_values.shift();
+
+        if (Array.isArray(value)) {
+            return '(' + value.map(function(v) {
+                values.push(v);
+                return '$' + values.length;
+            }).join(', ') + ')';
+        } else if (value === null) {
+            return 'NULL';
+        } else if (value === NOT_NULL) {
+            return 'NOT NULL';
+        } else {
+            values.push(value);
+            return '$' + values.length;
+        }
+    });
+};
+
+// used in UPDATE, SELECT and DELETE
+// can handle where objects like so:
+// { foo: [1,2,3,4], bar: NOT_NULL, baz: null }
+function get_where_clause(where, values, conjunction){
 }
 
 module.exports = {
